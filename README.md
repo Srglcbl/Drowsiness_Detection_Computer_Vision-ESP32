@@ -1,4 +1,4 @@
-🚗 #Driver Drowsiness Detection System Using YOLOv8 and ESP32#
+**🚗 Driver Drowsiness Detection System Using YOLOv8 and ESP32**
 
 A real-time driver drowsiness detection system based on Computer Vision and Deep Learning using YOLOv8, integrated with ESP32 for early warning alerts.
 

@@ -1,5 +1,13 @@
 # 🚗 Driver Drowsiness Detection System Using YOLOv8 and ESP32
 
+👨‍💻 Authors
+Department of Computer Engineering
+Universitas Pendidikan Indonesia
+
+-  Cahaya Tresna Afra Syaefu
+-  Chandra Supriatna
+-  Vania Afiya Riannisa
+
 A real-time driver drowsiness detection system based on Computer Vision and Deep Learning using YOLOv8, integrated with ESP32 for early warning alerts.
 
 📖 Overview
@@ -72,3 +80,13 @@ Classes:
 -  Buzzer
 -  Push Button
 -  Personal Computer / Laptop
+
+# Result
+
+<img width="1600" height="1000" alt="image" src="https://github.com/user-attachments/assets/539ad301-25df-4110-8b12-ddb1851b54a5" />
+
+<img width="1280" height="960" alt="image" src="https://github.com/user-attachments/assets/1f6df706-2047-40f9-9b67-051de9532c98" />
+
+<img width="1280" height="960" alt="image" src="https://github.com/user-attachments/assets/9a119bca-ffce-4059-bab1-77ea5639958b" />
+
+

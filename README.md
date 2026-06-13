@@ -14,12 +14,12 @@ A real-time driver drowsiness detection system based on Computer Vision and Deep
 
 Driver drowsiness is one of the major causes of traffic accidents worldwide. This project aims to detect signs of drowsiness in real time by analyzing:
 
-#👁️ Eye Condition (Open / Closed)
-#😴 Yawning Behavior (Yawn / Non-Yawn)
+👁️ Eye Condition (Open / Closed)
+😴 Yawning Behavior (Yawn / Non-Yawn)
 
 When drowsiness indicators exceed predefined thresholds, the system sends a signal to an ESP32 microcontroller, which activates a buzzer and displays warning information on an LCD screen.
 
-#🎯 Features
+🎯 Features
 Real-time driver monitoring using webcam
 YOLOv8-based object detection
 Multi-class detection:
@@ -32,7 +32,7 @@ Multi-class detection:
 -  LCD status display
 -  Low-latency detection suitable for safety applications
 
-#🏗️ System Architecture
+# 🏗️ System Architecture
 
 <img width="634" height="346" alt="image" src="https://github.com/user-attachments/assets/89d88181-fba0-4362-8494-1597c619c6e9" />
 

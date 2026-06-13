@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Pemantau Kantuk Pengemudi</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@400;500;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#136dec",
+                        "primary-dark": "#0f5ac4",
+                        "danger": "#ef4444",
+                        "success": "#10b981",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111822",
+                        "surface-dark": "#233348",
+                        "surface-dark-lighter": "#324867",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .7;
+            }
+        }
+
+        /* Smooth transitions for bars */
+        .progress-bar {
+            transition: width 0.3s ease-out;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-white antialiased overflow-x-hidden min-h-screen flex flex-col">
+    <header class="sticky top-0 z-50 w-full border-b border-surface-dark-lighter bg-background-dark/95 backdrop-blur">
+        <div class="px-4 md:px-10 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-4 text-white">
+                <div class="flex items-center justify-center size-10 rounded-lg bg-primary/20 text-primary">
+                    <span class="material-symbols-outlined text-2xl">visibility</span>
+                </div>
+                <h1 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Pemantau Kantuk Pengemudi
+                </h1>
+            </div>
+            <div class="flex flex-1 justify-end gap-6 items-center">
+                <div class="hidden md:flex items-center gap-2">
+                    <span class="relative flex h-3 w-3">
+                        <span id="system-status-ping"
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                        <span id="system-status-dot"
+                            class="relative inline-flex rounded-full h-3 w-3 bg-success"></span>
+                    </span>
+                    <span class="text-sm font-medium text-gray-300">Sistem Online</span>
+                </div>
+                <button
+                    class="flex items-center justify-center rounded-lg h-10 px-4 bg-surface-dark hover:bg-surface-dark-lighter text-white text-sm font-bold transition-colors">
+                    <span class="material-symbols-outlined mr-2 text-[20px]">videocam</span>
+                    <span class="truncate" id="camera-status-text">Kamera: Aktif</span>
+                </button>
+                <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-surface-dark-lighter cursor-pointer"
+                    style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCPHWgkSLhrsVwbUU5NKAyaRZz0NE6pPBPdcKrtVSMoEY9bTFVfpuORW_fTr7Ya9tCFlunbWXjFRf2PQQGLH_xct6dKvwlkEiupGt--LYBg-gBYdqHSx8_edBd6rDjgT6hegWwxEKpMPAw2HFYLNV7uUr15hcqn3duYUM_BnsS4efkeDADumAKXevsR-3EGomFmivUtMJMpEWKU-JypXoa_Vv4oGy6KtuWZKgCnjAIscpkxIFblyqgJh0SiCIdmsjzWOYBVyWxgnVrs");'>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="flex-grow layout-container flex flex-col w-full px-4 md:px-10 lg:px-40 py-8 mx-auto max-w-[1440px]">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+
+            <!-- LEFT COLUMN: Status Cards -->
+            <div class="flex flex-col gap-6 lg:col-span-1 h-full">
+                <!-- Driver Status Section Header -->
+                <h2 class="text-white tracking-light text-[24px] font-bold leading-tight">Status Pengemudi</h2>
+
+                <!-- Current Status Card -->
+                <div id="main-status-card"
+                    class="flex flex-col gap-3 rounded-xl p-6 bg-surface-dark border-l-4 border-success relative overflow-hidden shadow-lg group flex-grow transition-colors duration-500 min-h-[200px]">
+                    <div class="absolute right-0 top-0 p-4 opacity-10">
+                        <span id="main-status-icon-bg"
+                            class="material-symbols-outlined text-[140px] text-white">check_circle</span>
+                    </div>
+                    <div class="flex items-center gap-3 z-10">
+                        <div id="main-status-icon-small-bg"
+                            class="p-2 bg-success/20 rounded-full text-success transition-colors">
+                            <span class="material-symbols-outlined">health_and_safety</span>
+                        </div>
+                        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Status Saat Ini</p>
+                    </div>
+                    <div class="z-10 mt-4">
+                        <p id="main-status-text"
+                            class="text-white tracking-light text-5xl font-bold leading-tight mb-2">NORMAL</p>
+                        <p id="main-status-sub"
+                            class="text-success text-lg font-medium leading-normal flex items-center gap-1 transition-colors">
+                            <span class="material-symbols-outlined text-xl">trending_up</span>
+                            Waspada &amp; Fokus
+                        </p>
+                    </div>
+                    <div
+                        class="mt-auto pt-6 border-t border-surface-dark-lighter z-10 flex justify-between items-center">
+                        <div>
+                            <p class="text-gray-400 text-xs">Sesi</p>
+                            <p id="session-time" class="text-white font-mono text-lg">00:00:00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incident Last Card -->
+                <div id="incident-card"
+                    class="flex flex-col gap-3 rounded-xl p-6 bg-surface-dark border-l-4 border-surface-dark-lighter relative overflow-hidden shadow-lg transition-colors duration-500">
+                    <div class="flex items-center gap-3 z-10">
+                        <div id="incident-icon-bg"
+                            class="p-2 bg-gray-700/50 rounded-full text-gray-400 transition-colors">
+                            <span class="material-symbols-outlined">notifications_active</span>
+                        </div>
+                        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Insiden Terakhir</p>
+                    </div>
+                    <div class="z-10 mt-1">
+                        <p id="last-incident-status"
+                            class="text-white tracking-light text-2xl font-bold leading-tight mb-1">Belum Ada</p>
+                        <p id="last-incident-time" class="text-gray-400 text-sm font-normal">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Video Feed -->
+            <div class="flex flex-col gap-4 lg:col-span-2">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-white tracking-light text-[24px] font-bold leading-tight">Umpan Kamera Langsung</h2>
+                    <span
+                        class="px-2 py-1 rounded bg-red-500/20 text-red-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> REKAM
+                    </span>
+                </div>
+                <div
+                    class="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-surface-dark-lighter group shadow-2xl">
+                    <!-- Video Feed -->
+                    <img src="/video_feed" class="absolute inset-0 w-full h-full object-cover opacity-90"
+                        alt="Video Feed">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+
+                    <!-- FPS Overlay -->
+                    <div class="absolute top-4 right-4 text-success font-mono text-lg font-bold drop-shadow-md z-30">
+                        FPS: <span id="fps-val">0</span>
+                    </div>
+
+                    <!-- Bottom Left Stats -->
+                    <div
+                        class="absolute bottom-12 left-4 w-72 bg-black/60 backdrop-blur-sm p-3 rounded-lg border border-white/10 z-30 flex flex-col gap-3">
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between items-center text-xs font-medium text-white">
+                                <span class="font-mono">Mata Tertutup: <span id="closed-count-val">0.0 / 4.0
+                                        detik</span></span>
+                            </div>
+                            <div class="w-full h-2.5 bg-gray-700 rounded-full overflow-hidden">
+                                <div id="closed-bar" class="h-full bg-red-500 rounded-full progress-bar"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between items-center text-xs font-medium text-white">
+                                <span class="font-mono">Menguap: <span id="yawn-count-val">0.0 / 4.0 detik</span></span>
+                            </div>
+                            <div class="w-full h-2.5 bg-gray-700 rounded-full overflow-hidden">
+                                <div id="yawn-bar" class="h-full bg-orange-500 rounded-full progress-bar"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Control Buttons -->
+                <div
+                    class="w-full bg-surface-dark/50 border border-surface-dark-lighter rounded-lg p-3 text-center flex justify-center gap-4">
+                    <button onclick="stopDetection()"
+                        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-danger/10 hover:bg-danger/20 text-danger border border-danger/20 transition-all hover:scale-105 active:scale-95">
+                        <span class="material-symbols-outlined text-[20px]">stop_circle</span>
+                        <span class="font-medium">Stop Detection</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="flex flex-col gap-4">
+            <div class="flex items-center justify-between px-1">
+                <h2 class="text-white tracking-light text-[24px] font-bold leading-tight">Riwayat Insiden</h2>
+                <div class="flex gap-2">
+                    <button onclick="clearHistory()"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-sm hover:bg-red-500/20 transition-colors font-medium border border-red-500/20">
+                        <span class="material-symbols-outlined text-[18px]">delete</span> Hapus Data
+                    </button>
+                    <button onclick="exportData()"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm hover:bg-primary/20 transition-colors font-medium">
+                        <span class="material-symbols-outlined text-[18px]">download</span> Ekspor Data
+                    </button>
+                </div>
+            </div>
+            <div
+                class="w-full overflow-hidden rounded-xl border border-surface-dark-lighter bg-background-dark shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-surface-dark border-b border-surface-dark-lighter">
+                                <th
+                                    class="px-6 py-4 text-left text-gray-400 text-xs font-semibold uppercase tracking-wider w-1/4">
+                                    Tanggal</th>
+                                <th
+                                    class="px-6 py-4 text-left text-gray-400 text-xs font-semibold uppercase tracking-wider w-1/4">
+                                    Waktu</th>
+                                <th
+                                    class="px-6 py-4 text-left text-gray-400 text-xs font-semibold uppercase tracking-wider w-1/2">
+                                    Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body" class="divide-y divide-surface-dark-lighter">
+                            <!-- Initial Empty State -->
+                            <tr>
+                                <td colspan="3" class="px-6 py-8 text-center text-gray-500">Menunggu data insiden...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div
+                    class="px-6 py-4 border-t border-surface-dark-lighter flex items-center justify-between bg-surface-dark/30">
+                    <p class="text-xs text-gray-400">Menampilkan <span id="incident-count">0</span> catatan kejadian</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const socket = io();
+
+        // DOM Elements
+        const els = {
+            fps: document.getElementById('fps-val'),
+            closedVal: document.getElementById('closed-count-val'),
+            closedBar: document.getElementById('closed-bar'),
+            yawnVal: document.getElementById('yawn-count-val'),
+            yawnBar: document.getElementById('yawn-bar'),
+            yawnBar: document.getElementById('yawn-bar'),
+            mainCard: document.getElementById('main-status-card'),
+            mainStatus: document.getElementById('main-status-text'),
+            mainSub: document.getElementById('main-status-sub'),
+            mainIconBg: document.getElementById('main-status-icon-bg'),
+            mainIconSmall: document.getElementById('main-status-icon-small-bg'),
+            sessionTime: document.getElementById('session-time'),
+            incidentCard: document.getElementById('incident-card'),
+            lastIncidentStatus: document.getElementById('last-incident-status'),
+            lastIncidentTime: document.getElementById('last-incident-time'),
+            incidentIconBg: document.getElementById('incident-icon-bg'),
+            historyBody: document.getElementById('history-body'),
+            incidentCount: document.getElementById('incident-count'),
+            camStatusText: document.getElementById('camera-status-text')
+        };
+
+        socket.on('connect', () => {
+            console.log('✅ Connected to backend');
+            socket.emit('request_update');
+        });
+
+        socket.on('status_update', (data) => {
+            // FPS
+            els.fps.textContent = data.fps;
+
+            // Progress Bars (Satuan DETIK, Max Otomatis dari Backend)
+            const maxClosed = data.max_closed || 4.0;
+            const maxYawn = data.max_yawn || 4.0;
+
+            const closedPct = Math.min((data.closed_eye_counter / maxClosed) * 100, 100);
+            els.closedVal.textContent = `${data.closed_eye_counter.toFixed(1)} / ${maxClosed.toFixed(1)} detik`;
+            els.closedBar.style.width = `${closedPct}%`;
+
+            // Indikasi warna bar mendekati bahaya
+            if (data.closed_eye_counter > (maxClosed * 0.7)) els.closedBar.className = "h-full bg-red-600 rounded-full progress-bar shadow-[0_0_10px_rgba(220,38,38,0.7)]";
+            else els.closedBar.className = "h-full bg-red-500 rounded-full progress-bar";
+
+            const yawnPct = Math.min((data.yawn_counter / maxYawn) * 100, 100);
+            els.yawnVal.textContent = `${data.yawn_counter.toFixed(1)} / ${maxYawn.toFixed(1)} detik`;
+            els.yawnBar.style.width = `${yawnPct}%`;
+
+
+
+            // Main Status Card Styling
+            const isAlert = data.current_status === 'MENGANTUK';
+            if (isAlert) {
+                els.mainCard.className = 'flex flex-col gap-3 rounded-xl p-6 bg-surface-dark border-l-4 border-danger relative overflow-hidden shadow-lg group flex-grow transition-colors duration-500';
+                els.mainStatus.textContent = 'MENGANTUK';
+                els.mainStatus.className = 'text-white tracking-light text-5xl font-bold leading-tight mb-2 text-danger';
+                els.mainSub.innerHTML = '<span class="material-symbols-outlined text-xl">warning</span> BAHAYA TERDETEKSI';
+                els.mainSub.className = 'text-danger text-lg font-medium leading-normal flex items-center gap-1 transition-colors';
+                els.mainIconBg.textContent = 'warning';
+                els.mainIconSmall.className = 'p-2 bg-danger/20 rounded-full text-danger transition-colors';
+            } else {
+                els.mainCard.className = 'flex flex-col gap-3 rounded-xl p-6 bg-surface-dark border-l-4 border-success relative overflow-hidden shadow-lg group flex-grow transition-colors duration-500';
+                els.mainStatus.textContent = 'NORMAL';
+                els.mainStatus.className = 'text-white tracking-light text-5xl font-bold leading-tight mb-2';
+                els.mainSub.innerHTML = '<span class="material-symbols-outlined text-xl">trending_up</span> Waspada & Fokus';
+                els.mainSub.className = 'text-success text-lg font-medium leading-normal flex items-center gap-1 transition-colors';
+                els.mainIconBg.textContent = 'check_circle';
+                els.mainIconSmall.className = 'p-2 bg-success/20 rounded-full text-success transition-colors';
+            }
+
+            // Stats
+            els.sessionTime.textContent = data.session_time;
+            els.camStatusText.textContent = data.camera_active ? 'Kamera: Aktif' : 'Kamera: Offline';
+
+            // Last Incident
+            if (data.last_incident && data.last_incident.status !== 'Belum Ada') {
+                els.lastIncidentStatus.textContent = data.last_incident.status;
+                els.lastIncidentTime.textContent = data.last_incident.time + ' hari ini';
+                els.incidentCard.className = 'flex flex-col gap-3 rounded-xl p-6 bg-surface-dark border-l-4 border-danger/60 relative overflow-hidden shadow-lg transition-colors duration-500';
+                els.incidentIconBg.className = 'p-2 bg-danger/20 rounded-full text-danger transition-colors';
+            }
+        });
+
+        socket.on('history_update', (history) => {
+            els.incidentCount.textContent = history.length;
+            if (history.length === 0) {
+                els.historyBody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-gray-500">Belum ada insiden tercatat</td></tr>';
+                return;
+            }
+
+            els.historyBody.innerHTML = history.map(item => `
+            <tr class="hover:bg-surface-dark/50 transition-colors group">
+            <td class="px-6 py-4 text-gray-400 text-sm">${item.date}</td>
+            <td class="px-6 py-4 text-white text-sm font-mono">${item.time}</td>
+            <td class="px-6 py-4">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-danger/10 text-danger text-sm font-bold border border-danger/20">
+            <span class="w-2 h-2 rounded-full bg-danger"></span> ${item.status}
+            </span>
+            </td>
+            </tr>
+        `).join('');
+        });
+
+        socket.on('new_incident', (incident) => {
+            // Trigger history update explicitly if needed, though socket emits 'history_update' usually
+            // But for visual feedback we could flash the screen
+            console.log("New incident:", incident);
+        });
+
+        // API Calls
+        window.clearHistory = function () {
+            if (confirm('Yakin ingin MENGHAPUS SEMUA DATA KEJADIAN? Data tidak bisa dikembalikan.')) {
+                fetch('/api/clear_history', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert('Data berhasil dihapus.');
+                        // History update will be handled by socketio
+                    })
+                    .catch(err => console.error(err));
+            }
+        };
+
+        window.exportData = function () {
+            window.location.href = '/api/export';
+        };
+
+        window.stopDetection = function () {
+            if (confirm('Yakin ingin MEMATIKAN SISTEM?')) {
+                fetch('/api/stop', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert('Sistem sedang dimatikan... Silakan tutup tab ini.');
+                        document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;color:white;font-family:sans-serif;"><h1>Sistem Telah Dimatikan</h1></div>';
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Gagal menghubungi server (mungkin sudah mati).');
+                    });
+            }
+        };
+    </script>
+</body>
+
+</html>
